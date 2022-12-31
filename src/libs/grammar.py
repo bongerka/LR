@@ -1,40 +1,35 @@
+from .rule import Rule
 from typing import List
-from rule import Rule
 
 
 class Grammar:
-    def __init__(self, non_terminals: str = '', letters: str = '', StartNonTerminal: str = ''):
+    def __init__(self, non_terminals: str, letters: str, start_non_terminal: str):
         self.non_terminals: str = non_terminals
         self.letters: str = letters
-        self.Start: str = StartNonTerminal
+        self.Start: str = start_non_terminal
         self.rules: List[Rule] = []
 
-    def appendRules(self, addition: List[Rule]) -> None:
+    def append_rules(self, addition: List[Rule]) -> None:
         self.rules += addition
 
-    def changeStart(self) -> None:
+    def change_start(self) -> None:
         new_start: str = min(self.non_terminals + self.letters)
         new_start = chr(ord(new_start) - 1)
         self.non_terminals += new_start
         self.rules.append(Rule(new_start, self.Start))
         self.Start = new_start
 
-    def getRules(self) -> List[Rule]:
+    def get_rules(self) -> List[Rule]:
         return self.rules
 
-    def getCertainRules(self, premise: str) -> List[Rule]:
-        ret: List[Rule] = []
-        for rule in self.rules:
-            if rule.premise == premise:
-                ret.append(rule)
+    def get_certain_rules(self, premise: str) -> List[Rule]:
+        return [rule for rule in self.rules if rule.premise == premise]
 
-        return ret
-
-    def getNonTerminals(self) -> str:
+    def get_non_terminals(self) -> str:
         return self.non_terminals
 
-    def getAlphabet(self) -> str:
+    def get_alphabet(self) -> str:
         return self.letters
 
-    def getStart(self) -> str:
+    def get_start(self) -> str:
         return self.Start
