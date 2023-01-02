@@ -43,7 +43,7 @@ class LR:
         new_nodes: List[int] = []
         reduces: Dict[str, Rule] = {}
         moves: Dict[str, List[Situation]] = {}
-        for situation in deepcopy(self.nodes[vertex].situations):
+        for situation in sorted(deepcopy(self.nodes[vertex].situations)):
             if situation.point == len(situation.rule.result):
                 if reduces.get(situation.next) is not None:
                     raise BaseException("reduce conflict")
@@ -58,7 +58,7 @@ class LR:
         shifts: Dict[str, int] = {}
         for key, value in moves.items():
             self.nodes.append(Node())
-            for situation in value:
+            for situation in sorted(deepcopy(value)):
                 self.nodes[-1].situations.add(situation)
             self.make_closure(len(self.nodes) - 1)
             _id: int = len(self.nodes) - 1
@@ -81,42 +81,22 @@ class LR:
                 self.nodes[vertex].instructions[symbol] = Instruction.from_node(shifts[symbol])
         return new_nodes
 
-    '''def make_closure(self, _id: int) -> None:
-        changed: bool = True
-        print("closure", len(self.nodes[_id].situations), _id)
-        while changed:
-            size: int = len(self.nodes[_id].situations)
-            new_set = {}
-            while new_set != self.nodes[_id].situations:
-                new_set = self.nodes[_id].situations.copy()
-                for situation in new_set:
-                    length: int = len(situation.rule.result)
-                    point: int = situation.point
-                    if point == length:
-                        continue
-                    next_symbol: str = situation.rule.result[situation.point]
-                    next_symbols: Set[str] = self.getFirst(situation.rule.result[point+1:length] + ('' if situation.next == self.END else situation.next))
-                    for rule in self.grammar.get_certain_rules(next_symbol):
-                        for _next in next_symbols:
-                            self.nodes[_id].situations.add(Situation(rule=rule, point=0, _next=_next))
-            changed = (size != len(self.nodes[_id].situations))'''
-
     def make_closure(self, _id: int) -> None:
-        changed: bool = True
-        while changed:
-            size: int = len(self.nodes[_id].situations)
-            for situation in self.nodes[_id].situations.copy():
+        new_set = set()
+        while new_set != self.nodes[_id].situations:
+            new_set = deepcopy(self.nodes[_id].situations)
+            for situation in sorted(deepcopy(new_set)):
                 length: int = len(situation.rule.result)
                 point: int = situation.point
                 if point == length:
                     continue
                 next_symbol: str = situation.rule.result[situation.point]
-                next_symbols: Set[str] = self.getFirst(situation.rule.result[point+1:length] +
-                                                       ('' if situation.next == self.END else situation.next))
-                for rule in self.grammar.get_certain_rules(next_symbol):
-                    for _next in next_symbols:
+                next_symbols: Set[str] = self.getFirst(
+                    situation.rule.result[point + 1:length] + ('' if situation.next == self.END else situation.next)
+                )
+                for rule in deepcopy(self.grammar.get_certain_rules(next_symbol)):
+                    for _next in sorted(deepcopy(next_symbols)):
                         self.nodes[_id].situations.add(Situation(rule=rule, point=0, _next=_next))
-            changed = (size != len(self.nodes[_id].situations))
 
     def count_epsilon_creators(self) -> None:
         changed: bool = True
@@ -173,7 +153,7 @@ class LR:
         return len(node_stack) == 1 and node_stack[-1] == 0 and len(process_word) == 2
 
     def get_epsilon_creators(self) -> Set[str]:
-        return self.epsilon_creators
+        return deepcopy(self.epsilon_creators)
 
     def getFirst(self, expression: str):
         ret: Set[str] = {self.END}
@@ -189,5 +169,4 @@ class LR:
         if self.FIRST.get(expression[0]) is None:
             return ret
         ans: Set[str] = self.FIRST[expression[0]]
-        ans.union(ret)
-        return ans
+        return ans.union(ret)

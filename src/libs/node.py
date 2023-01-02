@@ -8,8 +8,23 @@ class Situation:
         self.point: int = point
         self.next: str = _next
 
-    def __key(self):    
+    def compare_situations(self, other) -> bool:
+        if self.next != other.next:
+            return self.next < other.next
+        if self.point != other.point:
+            return self.point < other.point
+        if self.rule.premise != other.rule.premise:
+            return self.rule.premise < other.rule.premise
+        return self.rule.result < other.rule.result
+
+    def equal(self, other) -> bool:
+        return not (self.compare_situations(other) or other.compare_situations(self))
+
+    def __key(self):
         return self.rule, self.point, self.next
+
+    def __lt__(self, other):
+        return self.compare_situations(other)
 
     def __hash__(self):
         return hash(self.__key())
@@ -20,7 +35,7 @@ class Situation:
         return NotImplemented
 
     def __copy__(self):
-        return Situation(self.rule.copy(), self.point, self.next)
+        return Situation(self.rule.__copy__(), self.point, self.next)
 
 
 class Instruction:

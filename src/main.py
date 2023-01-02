@@ -1,14 +1,8 @@
-from libs.parser import LR
-from libs.grammar import Grammar
-from libs.rule import Rule
+from libs.parser import LR, Grammar, Rule
 
 
 def main():
-    g = Grammar("SCD", "cd", 'S')
-    g.append_rules([Rule('S', "CD"), Rule('C', ""), Rule('C', 'c'), Rule('D', ""), Rule('D', 'd')])
-    parser = LR()
-    parser.fit(g)
-    parser.getFirst('S')
+    pass
 
 
 if __name__ == "__main__":

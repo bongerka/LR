@@ -1,9 +1,6 @@
 import pytest
 
-from src.libs.parser import LR
-from src.libs.grammar import Grammar
-from src.libs.rule import Rule
-
+from src.libs.parser import LR, Grammar, Rule
 
 def test_grammar():
     g = Grammar("SABC", "abc", 'S')
@@ -79,6 +76,33 @@ def test_epsilon_LR():
     assert parser.process('d') is True
     assert parser.process("cd") is True
     assert parser.process("cc") is False
+
+
+def get_cycled_LR() -> LR:
+    g = Grammar('S', "ab", 'S')
+    g.append_rules([Rule('S', "SaSb"), Rule('S', "")])
+    parser = LR()
+    parser.fit(g)
+    return parser
+
+
+def test_get_first3():
+    parser = get_cycled_LR()
+    assert parser.get_epsilon_creators() == {'R', 'S'}
+    assert parser.getFirst('S') == {'a', '$'}
+    assert parser.getFirst('R') == {'a', '$'}
+
+
+def test_cycled_LR():
+    parser = get_cycled_LR()
+    assert parser.process("") is True
+    assert parser.process("a") is False
+    assert parser.process("c") is False
+    assert parser.process("ab") is True
+    assert parser.process("ba") is False
+    assert parser.process("abab") is True
+    assert parser.process("aababb") is True
+    assert parser.process("aabb") is True
 
 
 if __name__ == "__main__":
