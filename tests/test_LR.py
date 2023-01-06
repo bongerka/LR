@@ -129,5 +129,13 @@ def test_LR5():
         assert isinstance(e, KeyError)
 
 
+def test_new_getFirst():
+    g = Grammar("SRT", "ab", 'S')
+    g.append_rules([Rule('S', "RTS"), Rule('S', "a"), Rule('R', ""), Rule('R', 'a'), Rule('T', 'b')])
+    parser = LR()
+    parser.fit(g)
+    assert parser.getFirst("RTS") == {'a', 'b'}
+
+
 if __name__ == "__main__":
     pytest.main()

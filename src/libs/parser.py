@@ -24,11 +24,12 @@ class LR:
         process_word: str = (word + self.END)[::-1]
         while process_word:
             if self._nodes[node].instructions.get(process_word[-1]) is None:
-                if process_word[-1] == self._new_start:
-                    break
-                return False
+                break
 
             instruction: Instruction = self._nodes[node].instructions.get(process_word[-1])
+            if instruction.is_accept():
+                return True
+
             if instruction.is_shift() or instruction.is_goto():
                 node = instruction.get_node()
                 node_stack.append(node)
@@ -43,7 +44,7 @@ class LR:
                 process_word += instruction.get_rule().premise
                 node = node_stack[-1]
 
-        return node_stack == [0] and len(process_word) == 2
+        return False
 
     def fit(self, source_grammar: Grammar) -> None:
         self._nodes.clear()
@@ -55,6 +56,7 @@ class LR:
         self._grammar.change_start()
         self._new_start = self._grammar.get_start()
         self.__count_epsilon_creators()
+        self.ACCEPT: Situation = Situation(Rule(self._new_start, self._prev_start), 1, self.END)
         for NonTerm in self._grammar.get_non_terminals():
             self._FIRST[NonTerm]: Set[str] = set()
             self.__countFirst(NonTerm, NonTerm, set())
@@ -73,12 +75,15 @@ class LR:
 
     def __process_node(self, vertex: int) -> List[int]:
         new_nodes: List[int] = []
+        accept_next: Optional[str] = None
         reduces: Dict[str, Rule] = {}
         moves: Dict[str, Set[Situation]] = {}
         for situation in deepcopy(self._nodes[vertex].situations):
             if situation.point == len(situation.rule.result):
                 if reduces.get(situation.next) is not None:
                     raise BaseException("reduce-reduce conflict")
+                if situation == self.ACCEPT:
+                    accept_next = self.END
                 reduces[situation.next] = situation.rule
             else:
                 next_symbol: str = situation.rule.result[situation.point]
@@ -114,6 +119,8 @@ class LR:
                 self._nodes[vertex].instructions[symbol] = Instruction.from_reduce(reduces[symbol])
             if shifts.get(symbol) is not None:
                 self._nodes[vertex].instructions[symbol] = Instruction.from_shift(shifts[symbol])
+            if symbol == accept_next:
+                self._nodes[vertex].instructions[symbol].accept = True
 
         for symbol in self._grammar.get_non_terminals():
             if goto.get(symbol) is not None:
@@ -154,7 +161,8 @@ class LR:
     def __countFirst(self, current: str, target: str, processed: Set[str]) -> None:
         processed.add(current)
         for rule in self._grammar.get_certain_rules(current):
-
+            if rule.result == "":
+                self._FIRST[target].add("")
             for symbol in rule.result:
                 if symbol in self._grammar.get_alphabet():
                     self._FIRST[target].add(symbol)
@@ -164,14 +172,21 @@ class LR:
                 if symbol not in self._epsilon_creators:
                     break
 
-    def getFirst(self, expression):
-        ret = set()
-        for s in expression:
-            if not ret:
-                ret = self._FIRST.get(s) if s in self._grammar.get_non_terminals() else {s}
+    def sets_sum(self, set1: Set[str], set2: Set[str]):
+        ret: Set[str] = set()
+        for word1 in set1:
+            for word2 in set2:
+                ret.add((word1 + word2)[:1])
+        return ret
 
-        if all(s in self._epsilon_creators for s in expression):
-            return ret.union(self.END)
+    def getFirst(self, expression) -> Set[str]:
+        ret = {""}
+        for X in expression:
+            ret = self.sets_sum(ret, self._FIRST.get(X) if X in self._grammar.get_non_terminals() else {X})
+
+        if "" in ret:
+            ret.discard("")
+            ret = ret.union(self.END)
 
         return ret
 

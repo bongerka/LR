@@ -24,10 +24,12 @@ class Situation:
 
 
 class Instruction:
-    def __init__(self, reduce_rule: Optional[Rule] = None, dest_node: Optional[int] = None, goto: Optional[int] = None):
+    def __init__(self, reduce_rule: Optional[Rule] = None, dest_node: Optional[int] = None,
+                 goto: Optional[int] = None, accept: bool = False):
         self.reduce_rule: Optional[Rule] = reduce_rule
         self.goto: Optional[int] = goto
         self.dest_node: Optional[int] = dest_node
+        self.accept = accept
 
     @classmethod
     def from_reduce(cls, rule: Rule):
@@ -41,6 +43,10 @@ class Instruction:
     def from_goto(cls, node: int):
         return cls(goto=node)
 
+    @classmethod
+    def from_accept(cls, accept: bool):
+        return cls(accept=accept)
+
     def is_reduce(self) -> bool:
         return self.reduce_rule is not None
 
@@ -49,6 +55,9 @@ class Instruction:
 
     def is_goto(self) -> bool:
         return self.goto is not None
+
+    def is_accept(self) -> bool:
+        return self.accept
 
     def get_rule(self) -> Rule:
         return self.reduce_rule
