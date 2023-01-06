@@ -2,6 +2,7 @@ import pytest
 
 from src.libs.parser import LR, Grammar, Rule
 
+
 def test_grammar():
     g = Grammar("SABC", "abc", 'S')
     assert g.get_non_terminals() == "SABC"
@@ -35,7 +36,7 @@ def test_get_first1():
     assert parser.getFirst('C') == {'c', 'd'}
     assert parser.getFirst('S') == {'c', 'd'}
     assert parser.getFirst('B') == {'c', 'd'}
-    assert parser.getFirst("") == {'$'}
+    assert parser.getFirst("") == {LR.END}
     assert parser.getFirst('c') == {'c'}
 
 
@@ -48,6 +49,7 @@ def test_LR():
     assert parser.process("ccdd") is True
     assert parser.process("cc") is False
     assert parser.process("ddd") is False
+    assert parser.process("cdd") is True
     assert parser.process("ccccdcccd") is True
 
 
@@ -62,10 +64,10 @@ def get_epsilon_LR() -> LR:
 def test_get_first2():
     parser = get_epsilon_LR()
     assert parser.get_epsilon_creators() == {'B', 'S', 'C', 'D'}
-    assert parser.getFirst('S') == {'c', 'd', '$'}
-    assert parser.getFirst('C') == {'c', '$'}
-    assert parser.getFirst('D') == {'d', '$'}
-    assert parser.getFirst('B') == {'c', 'd', '$'}
+    assert parser.getFirst('S') == {'c', 'd', LR.END}
+    assert parser.getFirst('C') == {'c', LR.END}
+    assert parser.getFirst('D') == {'d', LR.END}
+    assert parser.getFirst('B') == {'c', 'd', LR.END}
 
 
 def test_epsilon_LR():
@@ -89,8 +91,8 @@ def get_cycled_LR() -> LR:
 def test_get_first3():
     parser = get_cycled_LR()
     assert parser.get_epsilon_creators() == {'R', 'S'}
-    assert parser.getFirst('S') == {'a', '$'}
-    assert parser.getFirst('R') == {'a', '$'}
+    assert parser.getFirst('S') == {'a', LR.END}
+    assert parser.getFirst('R') == {'a', LR.END}
 
 
 def test_cycled_LR():
@@ -103,6 +105,28 @@ def test_cycled_LR():
     assert parser.process("abab") is True
     assert parser.process("aababb") is True
     assert parser.process("aabb") is True
+
+
+def test_LR4():
+    g = Grammar('SD', "abc", 'S')
+    g.append_rules([Rule('S', "SaSb"), Rule('S', "c"), Rule('S', 'D'), Rule('D', 'a')])
+    parser = LR()
+    parser.fit(g)
+    assert parser.process("") is False
+    assert parser.process("caab") is True
+    assert parser.process("aacbaab") is True
+    assert parser.process("aacbaaa") is False
+
+
+def test_LR5():
+    g = Grammar("SRT", "ab", 'S')
+    g.append_rules([Rule('R', "aRa"), Rule('R', "bRb"), Rule('R', 'T'), Rule('T', "aSb"), Rule('T', "bSa"),
+                    Rule('S', "aRa"), Rule('S', "bRb"), Rule('S', 'a'), Rule('S', 'b'), Rule('S', 'T'), Rule('S', "")])
+    try:
+        parser = LR()
+        parser.fit(g)
+    except Exception as e:
+        assert isinstance(e, KeyError)
 
 
 if __name__ == "__main__":
